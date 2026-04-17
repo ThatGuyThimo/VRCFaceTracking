@@ -83,26 +83,12 @@
                     </Grid>
                 </labs:SettingsCard>
                 
-                <labs:SettingsExpander x:Uid="CalibrationSettings">
-                    <labs:SettingsExpander.HeaderIcon>
-                        <FontIcon Glyph="&#xEC49;"/>
-                    </labs:SettingsExpander.HeaderIcon>
-                    
-                    <labs:SettingsExpander.Items>
-                        <labs:SettingsCard x:Uid="CalibrationEnabledToggle">
-                            <ToggleSwitch IsOn="{x:Bind CalibrationSettings.Enabled, Mode=TwoWay}" />
-                        </labs:SettingsCard>
-                        <labs:SettingsCard x:Uid="ContCalibrationToggle">
-                            <ToggleSwitch IsOn="{x:Bind CalibrationSettings.ContinuousCalibration, Mode=TwoWay}" />
-                        </labs:SettingsCard>
-                        <labs:SettingsCard x:Uid="TrackingCalibrateButton">
-                            <Button Style="{StaticResource AccentButtonStyle}" Click="ButtonBase_OnClick" x:Uid="CalibrateButton" />
-                        </labs:SettingsCard>
-                        <labs:SettingsCard x:Uid="CalibrationInfluenceSlider">
-                            <Slider Width="200" Minimum="0.00" Maximum="1.00" StepFrequency="0.01" SnapsTo="StepValues" Value="{x:Bind CalibrationSettings.CalibrationWeight, Mode=TwoWay}" />
-                        </labs:SettingsCard>
-                    </labs:SettingsExpander.Items>
-                </labs:SettingsExpander>
+                <labs:SettingsCard x:Uid="AutoStartSettings" IsEnabled="{x:Bind ViewModel.IsOpenVREnabled, Mode=OneWay}">
+                    <labs:SettingsCard.HeaderIcon>
+                        <FontIcon Glyph="&#xE840;" />
+                    </labs:SettingsCard.HeaderIcon>
+                    <ToggleSwitch IsOn="{x:Bind ViewModel.AutoStart, Mode=TwoWay}"/>
+                </labs:SettingsCard>
                 
                 <labs:SettingsExpander x:Uid="RiskySettings">
                     <labs:SettingsExpander.HeaderIcon>

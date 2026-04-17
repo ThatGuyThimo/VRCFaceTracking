@@ -124,37 +124,37 @@
     <value>VRCFaceTracking</value>
   </data>
   <data name="Shell_Main.Content" xml:space="preserve">
-    <value>主页</value>
+    <value>ホーム</value>
   </data>
   <data name="ListDetails_NoSelection.Text" xml:space="preserve">
-    <value>从列表中选择一个项目。</value>
+    <value>リストから項目を選択</value>
   </data>
   <data name="Shell_ListDetails.Content" xml:space="preserve">
-    <value>清单详情</value>
+    <value>リスト詳細</value>
   </data>
   <data name="Settings_Personalization.Text" xml:space="preserve">
-    <value>个性化</value>
+    <value>個人用設定</value>
   </data>
   <data name="Settings_Theme.Text" xml:space="preserve">
-    <value>主题</value>
+    <value>テーマ</value>
   </data>
   <data name="Settings_Theme_Light.Content" xml:space="preserve">
-    <value>亮色</value>
+    <value>ライト</value>
   </data>
   <data name="Settings_Theme_Dark.Content" xml:space="preserve">
-    <value>暗色</value>
+    <value>ダーク</value>
   </data>
   <data name="Settings_Theme_Default.Content" xml:space="preserve">
-    <value>跟随系统</value>
+    <value>規定の設定</value>
   </data>
   <data name="Settings_About.Text" xml:space="preserve">
-    <value>允许 AV3 头像通过 VRChat OSC 应用程序与眼睛和嘴唇追踪运行时进行交互。</value>
+    <value>AV3 アバターが目と唇の追跡ランタイムと対話できるようにする VRChat OSC アプリ</value>
   </data>
   <data name="Settings_AboutDescription.Text" xml:space="preserve">
-    <value>允许 AV3 头像通过 VRChat OSC 应用程序与眼睛和嘴唇追踪运行时进行交互。</value>
+    <value>AV3 アバターが目と唇の追跡ランタイムと対話できるようにする VRChat OSC アプリ</value>
   </data>
   <data name="SettingsPage_PrivacyTermsLink.Content" xml:space="preserve">
-    <value>个性化隐私声明</value>
+    <value>プライバシーに関する声明</value>
   </data>
   <data name="SettingsPage_PrivacyTermsLink.NavigateUri" xml:space="preserve">
     <value>https://github.com/benaclejames/VRCFaceTracking</value>
@@ -174,105 +174,156 @@
 &lt;/toast&gt;</value>
   </data>
   <data name="Shell_Output.Content" xml:space="preserve">
-    <value>输出</value>
+    <value>デバッグログ</value>
   </data>
   <data name="Shell_Parameters.Content" xml:space="preserve">
-    <value>参数</value>
+    <value>パラメーター</value>
   </data>
   <data name="ModuleRegistry_NoSelection.Text" xml:space="preserve">
-    <value>从列表中选择一个项目。</value>
+    <value>リストから項目を選択</value>
   </data>
   <data name="Shell_ModuleRegistry.Content" xml:space="preserve">
-    <value>官方模块库</value>
+    <value>モジュール管理</value>
   </data>
   <data name="About.Text" xml:space="preserve">
-    <value>关于</value>
+    <value>About</value>
   </data>
   <data name="Appearance.Text" xml:space="preserve">
-    <value>外观</value>
+    <value>アプリケーションライセンス</value>
   </data>
   <data name="Author.Text" xml:space="preserve">
-    <value>作者</value>
+    <value>制作者</value>
   </data>
   <data name="AvatarStatus.Text" xml:space="preserve">
-    <value>模型状态</value>
+    <value>アバターステータス</value>
   </data>
-  <data name="copyright.Description" xml:space="preserve">
-    <value>© 2023 VRCFaceTracking。版权所有。</value>
+  <data name="LocalTestAvatar.Text" xml:space="preserve">
+    <value>Local Test Avatar Detected</value>
+  </data>
+  <data name="LocalTestAvatarTooltip.Content" xml:space="preserve">
+    <value>Local Test Avatars are not supported and will cause issues</value>
+  </data>
+  <data name="Copyright.Description" xml:space="preserve">
+    <value>© 2023 VRCFaceTracking. All rights reserved.</value>
+  </data>
+  <data name="Credits.Description" xml:space="preserve">
+    <value>ソフトウエアに貢献してくれた方々</value>
   </data>
   <data name="Dependencies.Header" xml:space="preserve">
-    <value>依赖 &amp; 参考</value>
+    <value>依存関係と参照</value>
   </data>
   <data name="Description.Text" xml:space="preserve">
-    <value>描述</value>
+    <value>概要</value>
   </data>
   <data name="Disclaimer.Header" xml:space="preserve">
-    <value>本代码和信息按“原样”提供，不提供任何明示或暗示的保证，包括但不限于对适销性和/或特定用途适用性的暗示保证。</value>
+    <value>THIS CODE AND INFORMATION IS PROVIDED ‘AS IS’ WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A PARTICULAR PURPOSE.</value>
   </data>
   <data name="Downloads.Text" xml:space="preserve">
-    <value>下载量</value>
+    <value>ダウンロード数</value>
   </data>
   <data name="EyeTrackingActive.Text" xml:space="preserve">
-    <value>眼追已激活</value>
+    <value>アイトラッキング アクティブ</value>
   </data>
   <data name="FaceTrackingActive.Text" xml:space="preserve">
-    <value>面捕已激活</value>
+    <value>フェイストラッキング　アクティブ</value>
+  </data>
+  <data name="EyeTrackingInactive.Text" xml:space="preserve">
+    <value>Eye Tracking Inactive</value>
+  </data>
+  <data name="FaceTrackingInactive.Text" xml:space="preserve">
+    <value>Face Tracking Inactive</value>
   </data>
   <data name="BugRequestCard.Header" xml:space="preserve">
-    <value>提交BUG或请求新功能</value>
+    <value>バグレポートを提出する</value>
   </data>
   <data name="LastUpdated.Text" xml:space="preserve">
-    <value>最近更新时间</value>
+    <value>最終更新</value>
   </data>
   <data name="LegacyParameters.Text" xml:space="preserve">
-    <value>旧参数</value>
+    <value>Legacy Parameters</value>
   </data>
   <data name="Listening_on_Port.Text" xml:space="preserve">
-    <value>监听端口：</value>
+    <value>受信ポート:</value>
   </data>
   <data name="ModulePage.Text" xml:space="preserve">
-    <value>模块页</value>
+    <value>モジュールリポジトリ</value>
   </data>
   <data name="msIncoming.Text" xml:space="preserve">
-    <value>m/s 传入</value>
+    <value>m/s 受信</value>
   </data>
   <data name="msOutgoing.Text" xml:space="preserve">
-    <value>m/s 传出</value>
+    <value>m/s 送信</value>
   </data>
-  <data name="NoModulesInstalled.Text" xml:space="preserve">
-    <value>没有安装模块</value>
+  <data name="no_modules_installed_warning.Title" xml:space="preserve">
+    <value>モジュールがインストールされていません</value>
+  </data>
+  <data name="no_modules_installed_warning.ButtonText" xml:space="preserve">
+    <value>ここからいくつかインストールしてください！</value>
+  </data>
+  <data name="osc_was_disabled_warning.Title" xml:space="preserve">
+    <value>OSC設定が変更されました</value>
+  </data>
+  <data name="osc_was_disabled_warning.Description" xml:space="preserve">
+    <value>VRChat で OSC がオフになっていることがわかりました。先ほど有効にしました。これが発生したときにゲームが開いていた場合は、Raidal メニューから手動で有効にする必要がある場合があります。そうでない場合は、大丈夫です。</value>
   </data>
   <data name="OSCStatus.Text" xml:space="preserve">
-    <value>OSC状态</value>
+    <value>OSC ステータス</value>
   </data>
   <data name="Parameters.Text" xml:space="preserve">
-    <value>参数</value>
+    <value>パラメーター</value>
   </data>
   <data name="Rating.Text" xml:space="preserve">
-    <value>评分</value>
+    <value>評価</value>
+  </data>
+  <data name="ThemeSettings.Header" xml:space="preserve">
+    <value>テーマ</value>
   </data>
   <data name="ThemeSettings.Description" xml:space="preserve">
-    <value>选择要显示的应用主题</value>
+    <value>表示するアプリのテーマを選択します</value>
   </data>
   <data name="Sending_on_Port.Text" xml:space="preserve">
-    <value>发送端口：</value>
+    <value>送信ポート:</value>
   </data>
   <data name="ToggleTracking.Content" xml:space="preserve">
-    <value>追踪开关</value>
+    <value>トラッキング</value>
   </data>
   <data name="CloneRepoCard.Header" xml:space="preserve">
-    <value>克隆此存储库</value>
+    <value>このリポジトリのクローンを作成するには</value>
+  </data>
+  <data name="OpenLocalStorageCard.Header" xml:space="preserve">
+    <value>ローカルストレージを開く</value>
   </data>
   <data name="UsageInstructions.Text" xml:space="preserve">
-    <value>使用说明</value>
+    <value>使用上の注意</value>
   </data>
   <data name="Version.Text" xml:space="preserve">
-    <value>版本号</value>
+    <value>バージョン</value>
+  </data>
+  <data name="OscSettings.Header" xml:space="preserve">
+    <value>OSC アドレス</value>
   </data>
   <data name="OscSettings.Description" xml:space="preserve">
-    <value>OSC 数据应该发送到哪里？</value>
+    <value>OSC アドレス設定</value>
   </data>
-  <data name="You_appear_to_have_no_modules_installed.Text" xml:space="preserve">
-    <value>您似乎没有安装任何模块。</value>
+  <data name="no_modules_installed_warning.Description" xml:space="preserve">
+    <value>モジュールがインストールされていません</value>
+  </data>
+  <data name="CalibrationSettings.Header" xml:space="preserve">
+    <value>キャリブレーション設定</value>
+  </data>
+  <data name="CalibrationSettings.Description" xml:space="preserve">
+    <value>トラッキングにズレがある場合ここで調節することができます</value>
+  </data>
+  <data name="RiskySettings.Header" xml:space="preserve">
+    <value>開発者向け設定</value>
+  </data>
+  <data name="RiskySettings.Description" xml:space="preserve">
+    <value>正常な動作に支障をきたす場合があるため通常は使わないでください</value>
+  </data>
+  <data name="AutoStartSettings.Header" xml:space="preserve">
+    <value>自動起動</value>
+  </data>
+  <data name="AutoStartSettings.Description" xml:space="preserve">
+    <value>SteamVRの起動時に自動で起動します</value>
   </data>
 </root>

@@ -6,26 +6,18 @@ using VRCFaceTracking.Core.Services;
 
 namespace VRCFaceTracking.ViewModels;
 
-public partial class RiskySettingsViewModel : ObservableObject
+public partial class RiskySettingsViewModel(
+    IMainService mainService,
+    ILogger<RiskySettingsViewModel> logger,
+    ParameterSenderService parameterSenderService)
+    : ObservableObject
 {
-    private readonly IMainService _mainService;
-    private readonly ILogger<RiskySettingsViewModel> _logger;
-
     [ObservableProperty] private bool _enabled;
 
     public bool AllRelevantDebug
     {
-        get => ParameterSenderService.AllParametersRelevant;
-        set => ParameterSenderService.AllParametersRelevant = value;
-    }
-
-    public RiskySettingsViewModel(
-        IMainService mainService,
-        ILogger<RiskySettingsViewModel> logger
-        )
-    {
-        _mainService = mainService;
-        _logger = logger;
+        get => parameterSenderService.AllParametersRelevant;
+        set => parameterSenderService.AllParametersRelevant = value;
     }
 
     /// <summary>
@@ -34,11 +26,11 @@ public partial class RiskySettingsViewModel : ObservableObject
     /// </summary>
     public void ForceReInit()
     {
-        _logger.LogInformation("Reinitializing VRCFT...");
+        logger.LogInformation("Reinitializing VRCFT...");
         
-        _mainService.Teardown();
+        mainService.Teardown();
         
-        _mainService.InitializeAsync();
+        mainService.InitializeAsync();
     }
 
     /// <summary>
@@ -46,7 +38,7 @@ public partial class RiskySettingsViewModel : ObservableObject
     /// </summary>
     public void ResetVRCFT()
     {
-        _logger.LogInformation("Resetting VRCFT...");
+        logger.LogInformation("Resetting VRCFT...");
         
         // Create a file in the VRCFT folder called "reset"
         // This will cause the app to reset on the next launch
@@ -59,7 +51,7 @@ public partial class RiskySettingsViewModel : ObservableObject
     /// </summary>
     public void ResetAvatarOscManifests()
     {
-        _logger.LogInformation("Resetting VRChat avatar configuration...");
+        logger.LogInformation("Resetting VRChat avatar configuration...");
         try
         {
             foreach (var userFolder in Directory.GetDirectories(VRChat.VRCOSCDirectory))
@@ -72,7 +64,7 @@ public partial class RiskySettingsViewModel : ObservableObject
         }
         catch (Exception e)
         {
-            _logger.LogError(e, "Failed to reset VRChat avatar configuration! {Message}", e.Message);
+            logger.LogError(e, "Failed to reset VRChat avatar configuration! {Message}", e.Message);
         }
     }
 }

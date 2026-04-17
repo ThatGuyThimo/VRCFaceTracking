@@ -27,16 +27,34 @@ public partial class SettingsViewModel : ObservableRecipient
         get;
         set;
     }
+    
+    private OpenVRService OpenVRService
+    {
+        get;
+    }
+    
+    public bool AutoStart
+    {
+        get => OpenVRService.AutoStart;
+        set
+        {
+            OpenVRService.AutoStart = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public bool IsOpenVREnabled => OpenVRService.IsInitialized;
 
     private async void LoadContributors()
     {
         Contributors = await GithubService.GetContributors("benaclejames/VRCFaceTracking");
     }
 
-    public SettingsViewModel(IThemeSelectorService themeSelectorService, GithubService githubService)
+    public SettingsViewModel(IThemeSelectorService themeSelectorService, GithubService githubService, OpenVRService openVRService)
     {
         _themeSelectorService = themeSelectorService;
         GithubService = githubService;
+        OpenVRService = openVRService;
 
         _elementTheme = _themeSelectorService.Theme;
 
@@ -49,7 +67,8 @@ public partial class SettingsViewModel : ObservableRecipient
                     await _themeSelectorService.SetThemeAsync(param);
                 }
             });
-        
+
+        OpenVRService.InitIfNotAlready();
         LoadContributors();
     }
 }

@@ -4,7 +4,19 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:local="using:VRCFaceTracking.Helpers"
+    xmlns:Interactivity="using:Microsoft.Xaml.Interactivity"
+    xmlns:services="using:VRCFaceTracking.Services"
     mc:Ignorable="d">
+
+    <Page.Resources>
+        <local:EnumToStringConverter x:Key="EnumToStringConverter"/>
+
+        <SolidColorBrush x:Key="LogLevelWarningBrush" Color="#FFFF23" />
+        <SolidColorBrush x:Key="LogLevelErrorBrush" Color="#DB2543" />
+        <SolidColorBrush x:Key="LogLevelCriticalBrush" Color="#A70023" />
+
+    </Page.Resources>
 
     <Grid>
         <Grid.RowDefinitions>
@@ -50,8 +62,29 @@
                 <StackPanel Orientation="Vertical" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
                     <ItemsControl ItemsSource="{x:Bind FilteredLog}" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
                         <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{Binding}"/>
+                            <DataTemplate x:DataType="services:LogLine">
+                                <TextBlock x:Name="LogLineText" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind Message}" >
+                                    <Interactivity:Interaction.Behaviors>
+                                        <Interactivity:DataTriggerBehavior Binding="{x:Bind Level, Converter={StaticResource EnumToStringConverter}}" Value="(Trace)">
+                                            <Interactivity:ChangePropertyAction TargetObject="{Binding ElementName=LogLineText}" PropertyName="Foreground" Value="{ThemeResource TextFillColorSecondaryBrush}" />
+                                        </Interactivity:DataTriggerBehavior>
+                                        <Interactivity:DataTriggerBehavior Binding="{x:Bind Level, Converter={StaticResource EnumToStringConverter}}" Value="(Debug)">
+                                            <Interactivity:ChangePropertyAction TargetObject="{Binding ElementName=LogLineText}" PropertyName="Foreground" Value="{ThemeResource TextFillColorSecondaryBrush}" />
+                                        </Interactivity:DataTriggerBehavior>
+                                        <Interactivity:DataTriggerBehavior Binding="{x:Bind Level, Converter={StaticResource EnumToStringConverter}}" Value="(Information)">
+                                            <Interactivity:ChangePropertyAction TargetObject="{Binding ElementName=LogLineText}" PropertyName="Foreground" Value="{ThemeResource TextFillColorSecondaryBrush}" />
+                                        </Interactivity:DataTriggerBehavior>
+                                        <Interactivity:DataTriggerBehavior Binding="{x:Bind Level, Converter={StaticResource EnumToStringConverter}}" Value="(Warning)">
+                                            <Interactivity:ChangePropertyAction TargetObject="{Binding ElementName=LogLineText}" PropertyName="Foreground" Value="{StaticResource LogLevelWarningBrush}" />
+                                        </Interactivity:DataTriggerBehavior>
+                                        <Interactivity:DataTriggerBehavior Binding="{x:Bind Level, Converter={StaticResource EnumToStringConverter}}" Value="(Error)">
+                                            <Interactivity:ChangePropertyAction TargetObject="{Binding ElementName=LogLineText}" PropertyName="Foreground" Value="{StaticResource LogLevelErrorBrush}" />
+                                        </Interactivity:DataTriggerBehavior>
+                                        <Interactivity:DataTriggerBehavior Binding="{x:Bind Level, Converter={StaticResource EnumToStringConverter}}" Value="(Critical)">
+                                            <Interactivity:ChangePropertyAction TargetObject="{Binding ElementName=LogLineText}" PropertyName="Foreground" Value="{StaticResource LogLevelCriticalBrush}" />
+                                        </Interactivity:DataTriggerBehavior>
+                                   </Interactivity:Interaction.Behaviors>
+                                </TextBlock>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>

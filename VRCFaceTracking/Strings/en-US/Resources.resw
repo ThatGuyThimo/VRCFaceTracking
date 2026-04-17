@@ -227,6 +227,12 @@
   <data name="FaceTrackingActive.Text" xml:space="preserve">
     <value>Face Tracking Active</value>
   </data>
+  <data name="EyeTrackingInactive.Text" xml:space="preserve">
+    <value>Eye Tracking Inactive</value>
+  </data>
+  <data name="FaceTrackingInactive.Text" xml:space="preserve">
+    <value>Face Tracking Inactive</value>
+  </data>
   <data name="BugRequestCard.Header" xml:space="preserve">
     <value>File a bug report</value>
   </data>
@@ -385,5 +391,8 @@
   </data>
   <data name="HardwareDebug.Description" xml:space="preserve">
     <value>Stare at your tongue I guess?</value>
+  </data>
+  <data name="Shell_TrackingSettings.Content" xml:space="preserve">
+    <value>Tracking Settings</value>
   </data>
 </root>

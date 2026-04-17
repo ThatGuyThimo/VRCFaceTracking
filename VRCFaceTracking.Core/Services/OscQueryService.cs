@@ -12,120 +12,113 @@ using VRCFaceTracking.Core.Params;
 
 namespace VRCFaceTracking.Core.Services;
 
-public partial class OscQueryService : ObservableObject
+public partial class OscQueryService(
+    ILogger<OscQueryService> logger,
+    OscQueryConfigParser oscQueryConfigParser,
+    AvatarConfigParser avatarConfigParser,
+    ParameterSenderService parameterSenderService,
+    IOscTarget oscTarget,
+    MulticastDnsService multicastDnsService,
+    OscRecvService recvService,
+    ILocalSettingsService settingsService,
+    HttpHandler httpHandler,
+    IDispatcherService dispatcherService)
+    : ObservableObject
 {
-    private const string k_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    
-    // Services
-    private readonly ILogger _logger;
-    private readonly OscQueryConfigParser _oscQueryConfigParser;
-    private readonly MulticastDnsService _multicastDnsService;
-    private static readonly Random Random = new ();
-    
     [ObservableProperty] private IAvatarInfo _avatarInfo = new NullAvatarDef("Loading...", "Loading...");
     [ObservableProperty] private List<Parameter> _avatarParameters;
 
-    private readonly IOscTarget _oscTarget;
- 
-    // Local vars
-    private readonly OscRecvService _recvService;
-    private readonly ILocalSettingsService _settingsService;
-    private readonly HttpHandler _httpHandler;
-    
-    public OscQueryService(
-        ILogger<OscQueryService> logger,
-        OscQueryConfigParser oscQueryConfigParser,
-        IOscTarget oscTarget,
-        MulticastDnsService multicastDnsService,
-        OscRecvService recvService,
-        ILocalSettingsService settingsService,
-        HttpHandler httpHandler
-    )
-    {
-        _oscQueryConfigParser = oscQueryConfigParser;
-        _logger = logger;
-        _recvService = recvService;
-        _recvService.OnMessageReceived = HandleNewMessage;
-        _multicastDnsService = multicastDnsService;
-        _oscTarget = oscTarget;
-        _settingsService = settingsService;
-        _httpHandler = httpHandler;
-    }
-
     public async Task InitializeAsync()
     {
-        _logger.LogDebug("OSC Service Initializing");
-            
-        await _settingsService.Load(_oscTarget);
-        
+        logger.LogDebug("OSC Service Initializing");
+
+        recvService.OnMessageReceived = HandleNewMessage;
+
+        await settingsService.Load(oscTarget);
+
         (bool listenerSuccess, bool senderSuccess) result = (false, false);
 
-        if (string.IsNullOrWhiteSpace(_oscTarget.DestinationAddress))
+        if (string.IsNullOrWhiteSpace(oscTarget.DestinationAddress))
         {
             return;  // Return both false as we cant bind to anything without an address
         }
 
-        _multicastDnsService.OnVrcClientDiscovered += FirstClientDiscovered;
-        
-        _multicastDnsService.SendQuery("_oscjson._tcp.local");
-            
-        _logger.LogDebug("OSC Service Initialized with result {0}", result);
+        multicastDnsService.OnVrcClientDiscovered += FirstClientDiscovered;
+
+        multicastDnsService.SendQuery("_oscjson._tcp.local");
+
+        logger.LogDebug("OSC Service Initialized with result {0}", result);
         await Task.CompletedTask;
     }
-    
+
     private void FirstClientDiscovered()
     {
-        _multicastDnsService.OnVrcClientDiscovered -= FirstClientDiscovered;
-        
-        _logger.LogInformation("OSCQuery detected. Setting port negotiation to autopilot.");
-        
-        var randomStr = new string(Enumerable.Repeat(k_chars, 6).Select(s => s[Random.Next(s.Length)]).ToArray());
-        _httpHandler.OnHostInfoQueried += HandleNewAvatar;
-        
-        var recvEndpoint = _recvService.UpdateTarget(new IPEndPoint(IPAddress.Parse(_oscTarget.DestinationAddress), 0));
+        multicastDnsService.OnVrcClientDiscovered -= FirstClientDiscovered;
+
+        logger.LogInformation($"OSCQuery detected at {multicastDnsService.VrchatClientEndpoint}. Setting port negotiation to autopilot.");
+
+        httpHandler.OnHostInfoQueried += HandleNewAvatarWrapper;
+
+        var recvEndpoint = recvService.UpdateTarget(new IPEndPoint(IPAddress.Parse(oscTarget.DestinationAddress), 0));
         if (recvEndpoint == null)
         {
-            _logger.LogError("Very strange. We were unable to bind to a random port.");
-            recvEndpoint = new IPEndPoint(IPAddress.Parse(_oscTarget.DestinationAddress), _oscTarget.InPort);
+            logger.LogError("Very strange. We were unable to bind to a random port.");
+            recvEndpoint = new IPEndPoint(IPAddress.Parse(oscTarget.DestinationAddress), oscTarget.InPort);
         }
-        
-        // TODO: Move this somewhere more appropriate
-        var listener = new TcpListener(IPAddress.Any, 0);
-        listener.Start();
-        var port = ((IPEndPoint)listener.LocalEndpoint).Port;
-        listener.Stop();
-        _httpHandler.SetAppName("VRCFT-" + randomStr);
-        _httpHandler.BindTo($"http://127.0.0.1:{port}/", recvEndpoint.Port);
-        
+
+        var randomServiceSuffix = Utils.GetRandomChars(6);
+        var httpPort = Utils.GetRandomFreePort();
+        httpHandler.SetAppName("VRCFT-" + randomServiceSuffix);
+        httpHandler.BindTo($"http://127.0.0.1:{httpPort}/", recvEndpoint.Port);
+
         // Advertise our OSC JSON and OSC endpoints (OSC JSON to display the silly lil popup in-game)
-        _multicastDnsService.Advertise("_oscjson._tcp", "VRCFT-"+randomStr, port, IPAddress.Loopback);
-        _multicastDnsService.Advertise("_osc._udp", "VRCFT-"+randomStr, recvEndpoint.Port, IPAddress.Loopback);
-        
+        multicastDnsService.Advertise("_oscjson._tcp", new AdvertisedService("VRCFT-"+randomServiceSuffix, httpPort, IPAddress.Loopback));
+        multicastDnsService.Advertise("_osc._udp", new AdvertisedService("VRCFT-"+randomServiceSuffix, recvEndpoint.Port, IPAddress.Loopback));
+
         HandleNewAvatar();
     }
 
-    private async void HandleNewAvatar()
+    private async void HandleNewAvatar(string newId = null)
     {
-        _httpHandler.OnHostInfoQueried -= HandleNewAvatar;
-        var newAvatar = await _oscQueryConfigParser.ParseAvatar("");
-        if (newAvatar.HasValue)
+        (IAvatarInfo avatarInfo, List<Parameter> relevantParameters)? newAvatar;
+        if (multicastDnsService.VrchatClientEndpoint != null)
+        {
+            newAvatar = await oscQueryConfigParser.ParseAvatar("");
+        }
+        else
+        {
+            // handle normal osc
+            newAvatar = await avatarConfigParser.ParseAvatar(newId);
+        }
+
+        if (!newAvatar.HasValue)
+        {
+            return;
+        }
+
+        // Parsing success. Deregister callback and update values
+        httpHandler.OnHostInfoQueried -= HandleNewAvatarWrapper;
+        dispatcherService.Run(() =>
         {
             AvatarInfo = newAvatar.Value.avatarInfo;
             AvatarParameters = newAvatar.Value.relevantParameters;
-        }
+        });
     }
-        
+
+    private void HandleNewAvatarWrapper() => HandleNewAvatar(); // Helper func used in callbacks
+    
+
     private void HandleNewMessage(OscMessage msg)
     {
         switch (msg.Address)
         {
             case "/avatar/change":
-                HandleNewAvatar();
+                HandleNewAvatar(msg.Value as string);
                 break;
             case "/vrcft/settings/forceRelevant":   // Endpoint for external tools to force vrcft to send all parameters
                 if (msg.Value is bool relevancy)
                 {
-                    ParameterSenderService.AllParametersRelevant = relevancy;
+                    parameterSenderService.AllParametersRelevant = relevancy;
                 }
 
                 break;
@@ -153,23 +146,23 @@ public partial class OscQueryService : ObservableObject
 
     partial void OnAvatarParametersChanged(List<Parameter> value)
     {
-        _logger.LogDebug("Configuration loaded. Checking for native tracking parameters...");
+        logger.LogDebug("Configuration loaded. Checking for native tracking parameters...");
         var hasLoadedNative = value.Any(p => p.GetParamNames().Any(t => t.paramName.StartsWith("/tracking/")));
         if (hasLoadedNative)
         {
-            _logger.LogWarning("Native tracking parameters detected.");
+            logger.LogWarning("Native tracking parameters detected.");
         }
 
         var deprecatedParams = value.Where(p => p.Deprecated).ToList();
 
-        _logger.LogInformation(value.Count + " parameters loaded.");
+        logger.LogInformation(value.Count + " parameters loaded.");
         if (deprecatedParams.Any())
         {
-            _logger.LogWarning(
+            logger.LogWarning(
                 deprecatedParams.Count +
                 " Legacy parameters detected. " +
                 "Please consider updating the avatar to use the latest documented parameters.");
-            _logger.LogDebug($"Loaded deprecated parameters: {string.Join(", ", deprecatedParams.SelectMany(x => x.GetParamNames()).Select(y => y.paramName))}");
+            logger.LogDebug($"Loaded deprecated parameters: {string.Join(", ", deprecatedParams.SelectMany(x => x.GetParamNames()).Select(y => y.paramName))}");
         }
     }
 }

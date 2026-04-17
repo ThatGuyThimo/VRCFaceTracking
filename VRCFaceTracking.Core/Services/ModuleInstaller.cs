@@ -1,4 +1,8 @@
 ﻿using System.IO.Compression;
+using System.Net;
+using System.Net.Sockets;
+using System.Runtime.Versioning;
+using System.Security.Cryptography;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using VRCFaceTracking.Core.Helpers;
@@ -13,7 +17,7 @@ public class ModuleInstaller
     public ModuleInstaller(ILogger<ModuleInstaller> logger)
     {
         _logger = logger;
-        
+
         if (!Directory.Exists(Utils.CustomLibsDirectory))
         {
             Directory.CreateDirectory(Utils.CustomLibsDirectory);
@@ -27,7 +31,7 @@ public class ModuleInstaller
         {
             return;
         }
-        
+
         if (!Directory.Exists(dest))
         {
             Directory.CreateDirectory(dest);
@@ -46,16 +50,29 @@ public class ModuleInstaller
             Directory.CreateDirectory(newPath);
             File.Copy(file, Path.Combine(newPath, Path.GetFileName(file)), true);
         }
-        
+
         // Now we delete the source directory
         Directory.Delete(source, true);
     }
 
-    private static async Task DownloadModuleToFile(TrackingModuleMetadata moduleMetadata, string filePath)
+    private static async Task DownloadModuleToFile(TrackingModuleMetadata moduleMetadata, string filePath, string md5Hash = null)
     {
-        using var client = new HttpClient();
+        using var client = HappyEyeballsHttp.CreateHttpClient();
+
         var response = await client.GetAsync(moduleMetadata.DownloadUrl);
         var content = await response.Content.ReadAsByteArrayAsync();
+        if (!string.IsNullOrEmpty(md5Hash))
+        {
+            using var md5 = MD5.Create();
+            var hash = md5.ComputeHash(content);
+            var hashStr = BitConverter.ToString(hash).Replace("-", string.Empty).ToLowerInvariant();
+
+            if (!string.Equals(hashStr, md5Hash.ToLowerInvariant(), StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidDataException($"MD5 hash mismatch. Expected {md5Hash}, got {hashStr}");
+            }
+        }
+        
         await File.WriteAllBytesAsync(filePath, content);
         await Task.CompletedTask;
     }
@@ -64,6 +81,7 @@ public class ModuleInstaller
      * @param DLL file path
      * @return error; if true then the module should be skipped
      */
+    [SupportedOSPlatform("windows")]
     private bool RemoveZoneIdentifier(string path)
     {
         string zoneFile = path + ":Zone.Identifier";
@@ -87,7 +105,7 @@ public class ModuleInstaller
     {
         // Attempt to find the first DLL. If there's more than one, try find the one with the same name as the module
         var dllFiles = Directory.GetFiles(moduleDirectory, "*.dll");
-        
+
         switch (dllFiles.Length)
         {
             case 0:
@@ -108,7 +126,7 @@ public class ModuleInstaller
                 moduleMetadata.ModuleId);
             return null;
         }
-        
+
         _logger.LogDebug("Module {module} didn't specify a target dll, and contained multiple. Using {dll} as its distance of {distance} was closest to the module name",
             moduleMetadata.ModuleId, dllFile.FileName, dllFile.Distance);
         return Path.GetFileName(dllFile.FileName);
@@ -120,7 +138,7 @@ public class ModuleInstaller
         var fileName = Path.GetFileName(zipPath);
         var newZipPath = Path.Combine(Utils.CustomLibsDirectory, fileName);
         File.Copy(zipPath, newZipPath, true);
-        
+
         // Second, we unzip it 
         var tempDirectory = Path.Combine(Path.GetTempPath(), Path.GetFileNameWithoutExtension(zipPath));
         if (Directory.Exists(tempDirectory))
@@ -139,7 +157,7 @@ public class ModuleInstaller
             Directory.Delete(tempDirectory, true);
             return null;
         }
-        
+
         var moduleMetadata = await Json.ToObjectAsync<TrackingModuleMetadata>(await File.ReadAllTextAsync(moduleJsonPath));
         if (moduleMetadata == null)
         {
@@ -147,7 +165,8 @@ public class ModuleInstaller
             Directory.Delete(tempDirectory, true);
             return null;
         }
-        
+        moduleMetadata.IsLocal = true;
+
         // Now we move to a directory named after the module id and delete the temp directory
         var moduleDirectory = Path.Combine(Utils.CustomLibsDirectory, moduleMetadata.ModuleId.ToString());
         if (Directory.Exists(moduleDirectory))
@@ -156,7 +175,7 @@ public class ModuleInstaller
         }
 
         MoveDirectory(tempDirectory, moduleDirectory);
-        
+
         // Now we need to find the module's dll
         moduleMetadata.DllFileName ??= TryFindModuleDll(moduleDirectory, moduleMetadata);
         if (moduleMetadata.DllFileName == null)
@@ -164,10 +183,10 @@ public class ModuleInstaller
             _logger.LogError("Module {module} has no .dll file name specified and no .dll files were found in the extracted zip", moduleMetadata.ModuleId);
             return null;
         }
-        
+
         // Now we write the module.json file to the module directory
         await File.WriteAllTextAsync(Path.Combine(moduleDirectory, "module.json"), JsonConvert.SerializeObject(moduleMetadata, Formatting.Indented));
-        
+
         // Finally, we return the module's dll file name
         return Path.Combine(moduleDirectory, moduleMetadata.DllFileName);
     }
@@ -178,7 +197,7 @@ public class ModuleInstaller
         // The module will be contained within a directory corresponding to the module's id which will contain the root of the zip, or the .dll directly
         // as well as a module.json file containing the metadata for the module so we can identify the currently installed version, as well as
         // still support unofficial modules.
-        
+
         // First we need to create the directory for the module. If it already exists, we'll delete it and start fresh.
         var moduleDirectory = Path.Combine(Utils.CustomLibsDirectory, moduleMetadata.ModuleId.ToString());
         UninstallModule(moduleMetadata);
@@ -212,7 +231,7 @@ public class ModuleInstaller
             try
             {
                 tempZipPath = Path.Combine(tempDirectory, "module.zip");
-                await DownloadModuleToFile(moduleMetadata, tempZipPath);
+                await DownloadModuleToFile(moduleMetadata, tempZipPath, moduleMetadata.FileHash);
             }
             catch (Exception e)
             {
@@ -245,12 +264,15 @@ public class ModuleInstaller
                 return null;
             }
 
-            // Remove zone identifiers (unblock dlls)
-            foreach (var dll in Directory.GetFiles(moduleDirectory, "*.dll", SearchOption.AllDirectories))
+            // Remove zone identifiers (unblock dlls) on Windows
+            if (OperatingSystem.IsWindows())
             {
-                RemoveZoneIdentifier(dll);
+                foreach (var dll in Directory.GetFiles(moduleDirectory, "*.dll", SearchOption.AllDirectories))
+                {
+                    RemoveZoneIdentifier(dll);
+                }
             }
-            
+
             // We need to ensure a .dll name is valid in the RemoteTrackingModule model
             moduleMetadata.DllFileName ??= TryFindModuleDll(moduleDirectory, moduleMetadata);
             if (moduleMetadata.DllFileName == null)
@@ -264,28 +286,36 @@ public class ModuleInstaller
             moduleMetadata.DllFileName = string.IsNullOrEmpty(moduleMetadata.DllFileName)
                 ? Path.GetFileName(moduleMetadata.DownloadUrl)
                 : moduleMetadata.DllFileName;
-            
+
             var dllPath = Path.Combine(
-                moduleDirectory, 
+                moduleDirectory,
                 moduleMetadata.DllFileName);
-            
+
             if (Directory.Exists(moduleDirectory))
             {
                 Directory.Delete(moduleDirectory, true);
             }
             Directory.CreateDirectory(moduleDirectory);
 
-            await DownloadModuleToFile(moduleMetadata, dllPath);
-            
+            try
+            {
+                await DownloadModuleToFile(moduleMetadata, dllPath, moduleMetadata.FileHash);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError($"Failed to download module data for {moduleMetadata.ModuleName}. {e}");
+                return null;
+            }
+
             _logger.LogDebug("Downloaded module {module} to {dllPath}", moduleMetadata.ModuleId, dllPath);
         }
-        
+
         // Now we can overwrite the module.json file with the latest metadata
         var moduleJsonPath = Path.Combine(moduleDirectory, "module.json");
         await File.WriteAllTextAsync(moduleJsonPath, JsonConvert.SerializeObject(moduleMetadata, Formatting.Indented));
-        
+
         _logger.LogInformation("Installed module {module} to {moduleDirectory}", moduleMetadata.ModuleId, moduleDirectory);
-        
+
         return Path.Combine(moduleDirectory, moduleMetadata.DllFileName);
     }
 
@@ -303,7 +333,7 @@ public class ModuleInstaller
             _logger.LogWarning("Attempted to mark module {module} for deletion, but it didn't exist", module.ModuleId);
         }
     }
-    
+
     public void UninstallModule(TrackingModuleMetadata moduleMetadata)
     {
         _logger.LogDebug("Uninstalling module {module}", moduleMetadata.ModuleId);

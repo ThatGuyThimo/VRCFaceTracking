@@ -1,9 +1,15 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.Diagnostics;
+using System.Net;
+using System.Net.Sockets;
+using System.Runtime.InteropServices;
 using System.Security;
 using System.Security.Principal;
 
 namespace VRCFaceTracking.Core;
 
+/// <summary>
+/// Windows-centric utilities class
+/// </summary>
 public static class Utils
 {
     // Timer resolution helpers
@@ -35,5 +41,55 @@ public static class Utils
         
     public static readonly string UserAccessibleDataDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "VRCFaceTracking");
     public static readonly string PersistentDataDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "VRCFaceTracking");
-    public static readonly string CustomLibsDirectory = PersistentDataDirectory + "\\CustomLibs";
+    public static readonly string CustomLibsDirectory = Path.Combine(PersistentDataDirectory, "CustomLibs");
+    
+    public static int GetRandomFreePort()
+    {
+        // Uses TcpListener to bind to a random port by attempting to bind to port zero and letting the OS assign one.
+        var listener = new TcpListener(IPAddress.Any, 0);
+        listener.Start();
+        var port = ((IPEndPoint)listener.LocalEndpoint).Port;
+        listener.Stop();
+
+        return port;
+    }
+
+    private const string K_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    private static readonly Random Random = new();
+
+    public static string GetRandomChars(int num) => new string(Enumerable.Repeat(K_CHARS, num).Select(s => s[Random.Next(s.Length)]).ToArray());
+
+    public static void KillAllProcessesOfName(string name)
+    {
+        foreach (var proc in Process.GetProcessesByName(name))
+        {
+            if (proc.Id == Environment.ProcessId)
+            {
+                continue;
+            }
+
+            try
+            {
+                proc.Kill(entireProcessTree: true);
+                if (!proc.WaitForExit(2000)) 
+                {
+                    // on windows we can use taskkill /F /T /PID {procId} to force kill a process very aggressively. this has a higher success rate than process.kill!
+                    if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+                        using var killer = Process.Start(new ProcessStartInfo
+                        {
+                            FileName = "taskkill",
+                            Arguments = $"/F /T /PID {proc.Id}",
+                            CreateNoWindow = true,
+                            UseShellExecute = false
+                        });
+                        killer?.WaitForExit(2000);
+                    }
+                }
+
+            }
+            catch
+            {
+            }
+        }
+    }
 }

@@ -111,6 +111,7 @@ public partial class App : Application
             services.AddTransient<OscQueryConfigParser>();
             services.AddSingleton<UnifiedTracking>();
             services.AddSingleton<ILibManager, UnifiedLibManager>();
+            services.AddSingleton<OpenVRService>();
             services.AddSingleton<IOscTarget, OscTarget>();
             services.AddSingleton<HttpHandler>();
             services.AddSingleton<OscSendService>();
@@ -125,6 +126,8 @@ public partial class App : Application
             services.AddTransient<ParameterViewModel>();
             services.AddTransient<ParametersViewModel>();
             services.AddTransient<ParametersPage>();
+            services.AddTransient<MutatorViewModel>();
+            services.AddTransient<MutatorPage>();
             services.AddTransient<OutputViewModel>();
             services.AddTransient<OutputPage>();
             services.AddTransient<SettingsViewModel>();
@@ -171,23 +174,9 @@ public partial class App : Application
         });
         Current.UnhandledException += ExceptionHandler;
 
-        // Kill any other instances of VRCFaceTracking.exe
-        foreach (var proc in Process.GetProcessesByName("VRCFaceTracking"))
-        {
-            if (proc.Id == Environment.ProcessId)
-            {
-                continue;
-            }
-
-            try
-            {
-                proc.Kill();
-            }
-            catch
-            {
-                _logger?.LogWarning($"Unable to kill PID: {proc.Id}.");
-            }
-        }
+        // Kill any other instances of VRCFaceTracking.exe and our module processes
+        Core.Utils.KillAllProcessesOfName("VRCFaceTracking");
+        Core.Utils.KillAllProcessesOfName("VRCFaceTracking.ModuleProcess");
         
         await App.GetService<IActivationService>().ActivateAsync(args);
         await Host.StartAsync();

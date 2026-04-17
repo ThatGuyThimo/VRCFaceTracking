@@ -24,6 +24,7 @@ public class ActivationService : IActivationService
     private readonly ModuleInstaller _moduleInstaller;
     private readonly ILibManager _libManager;
     private readonly ILogger<ActivationService> _logger;
+    private readonly OpenVRService _openVrService;
     private UIElement? _shell;
 
     public ActivationService(
@@ -35,7 +36,8 @@ public class ActivationService : IActivationService
         IModuleDataService moduleDataService, 
         ModuleInstaller moduleInstaller, 
         ILibManager libManager,
-        ILogger<ActivationService> logger)
+        ILogger<ActivationService> logger,
+        OpenVRService openVrService)
     {
         _defaultHandler = defaultHandler;
         _activationHandlers = activationHandlers;
@@ -46,6 +48,7 @@ public class ActivationService : IActivationService
         _moduleInstaller = moduleInstaller;
         _libManager = libManager;
         _logger = logger;
+        _openVrService = openVrService;
     }
 
     public async Task ActivateAsync(object activationArgs)
@@ -103,6 +106,12 @@ public class ActivationService : IActivationService
 
         _logger.LogInformation("Initializing main service...");
         await _mainService.InitializeAsync().ConfigureAwait(false);
+        
+        _logger.LogInformation("Initializing OpenVR...");
+        if (!_openVrService.Initialize())
+        {
+            _logger.LogWarning("Failed to initialize OpenVR during ActivationService startup. Skipping.");
+        }
 
         // Before we initialize, we need to delete pending restart modules and check for updates for all our installed modules
         _logger.LogDebug("Checking for deletion requests for installed modules...");
@@ -118,13 +127,21 @@ public class ActivationService : IActivationService
         var remoteModules = await _moduleDataService.GetRemoteModules();
         var outdatedModules = remoteModules.Where(rm => localModules.Any(lm =>
         {
-            if (rm.ModuleId != lm.ModuleId) 
+            if (rm.ModuleId != lm.ModuleId || lm.IsLocal) 
                 return false;
+            
+            try
+            {
+                var remoteVersion = new Version(rm.Version);
+                var localVersion = new Version(lm.Version);
 
-            var remoteVersion = new Version(rm.Version);
-            var localVersion = new Version(lm.Version);
-
-            return remoteVersion.CompareTo(localVersion) > 0;
+                return remoteVersion.CompareTo(localVersion) > 0;
+            }
+            catch
+            {
+                // Fall back to just string matching
+                return string.CompareOrdinal(rm.Version, lm.Version) > 0;
+            }
         }));
         foreach (var outdatedModule in outdatedModules)
         {
